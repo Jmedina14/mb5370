@@ -1,0 +1,154 @@
+---
+title: "Workshop 2"
+author: "Jeremy Medina"
+date: "2023-05-03"
+output: html_document
+---
+
+Workshop 2: Using ggplot for communication
+
+```{r}
+library("tidyverse")
+```
+
+
+```{r}
+#3.1 Labels:
+#Good labels on your plots can help communicate key findings and also meet formatting requirements of journals or companies with certain styles.
+#To add labels we'll use the labs function, but we'll start with a title.
+
+ggplot(mpg, aes(x = displ, y = hwy)) + geom_point(aes(color = class)) + geom_smooth(se = FALSE) + labs(title = "Fuel efficiency generally decreases with engine size")
+
+#Subtitle is another argument we can use to add more detail in a smaller font under your title while caption adds text at the bottom right of your plot which is usually used to describe the source of the plot's data.
+
+ggplot(mpg, aes(x = displ, y = hwy)) + geom_point(aes(color = class)) + geom_smooth(se = FALSE) + labs(title = "Fuel efficiency generally decreases with engine size", subtitle = "Two seaters (sports cars) are an exception because of their light weight", caption = "Data from fueleconomy.gov")
+#labs can also be used to change your plots axes.
+
+ggplot(mpg, aes(x = displ, y = hwy)) + geom_point(aes(color = class)) + geom_smooth(se = FALSE) + labs(x = "Engine displacement (L)", y = "Highway fuel economy (mpg)", colour = "Car type")
+
+#3.2 Annotations:
+#We can also add plain text to our plots for doing something such as highlighting an important observation. For this we would use the function geom_text(), this allows us to add textual labels to your plots.
+
+best_in_class = mpg %>% group_by(class) %>% filter(row_number(desc(hwy)) == 1)
+#Made new dataframe with a filter that picked certain pieces of data from the original dataset.
+
+ggplot(mpg, aes(x = displ, y = hwy)) + geom_point(aes(colour = class)) + geom_text(aes(label = model), nudge_x = 2, nudge_y = 2, data = best_in_class)
+#This worked, but some of the labels are overlapping. We can fix this by using the nudge() function to move the text by a certain amount. We can also use other r pacakages for doing things such as text wrapping.
+```
+```{r}
+#3.3 Scales
+#We can also alter the default scales of ggplot to help customize our plots and improve our communication of our results. To do this we would use scale_x or scale_y for example.
+
+ggplot(mpg, aes(displ, hwy)) + geom_point(aes(colour = class)) + scale_x_continuous(limits = 100) + scale_y_continuous(limits = 40) + scale_colour_discrete(limits = 100)
+
+ggplot(mpg, aes(displ, hwy)) + geom_point(aes(colour = class))
+
+
+
+
+
+```
+```{r}
+#3.4 Axis ticks
+#ggplot also allows us to alter the ticks on our axes. The breaks argument controls the position of our ticks and we can use the labels argument ot change the text labels associated with our ticks.
+
+ggplot(mpg, aes(displ, hwy)) + geom_point(aes(colour = class)) + scale_y_continuous(breaks = seq(15,40, by = 5))
+
+#Seq changes the labels of our y axes as well as the difference between labels. Ex. by 5 means one label every 5 units of your y axis. 15 and 40 are the starting and end points of your plot.
+
+
+
+```
+```{r}
+#3.5 Legends and colour schemes
+#ggplot also allows us to change the position of our legend so that we could do things to make your plot wider or hide it all together. The theme function lets you control the position of the legend.
+
+base = ggplot(mpg, aes(displ, hwy)) + geom_point(aes(colour = class))
+
+base + theme(legend.position = "left")
+
+base + theme(legend.position = "top")
+
+base + theme(legend.position = "none")
+```
+```{r}
+#3.6 Replacing a scale
+#They are two types of scales that we are likely to want to switch out, the continuous position scales, and colour scales.
+
+#Plotting transformations of the variables you are working with can be very useful for seeing relationshps between variables.
+
+ggplot(diamonds, aes(carat, price)) + geom_bin2d() + scale_x_log10() + scale_y_log10()
+
+#The colour scale is one of the most important changes you can make to ggplots from a data visualization point.
+
+ggplot(mpg, aes(displ, hwy)) + geom_point(aes(color = drv))
+
+ggplot(mpg, aes(displ,hwy)) + geom_point(aes(color = drv)) + scale_colour_brewer(palette = "Set1")
+
+#If you only have a few colors, you can also use shapes to make sure that your results can be interpreted in black and white as well.
+
+ggplot(mpg, aes(displ,hwy)) + geom_point(aes(color = drv, shape = drv)) + scale_colour_brewer(palette = "Set1")
+
+#The color scales can be viewed online at colorbrewer2.org, but you can also use predefined colors if you want to by setting them yourself by using scale_colour_manual().
+
+presidential %>% mutate(id = 33 + row_number()) %>% ggplot(aes(start, id, colour = party)) + geom_point() + geom_segment(aes(xend = end, yend = id)) + scale_colour_manual(values = c(Republican = "red", Democratic = "blue"))
+
+#We can also use something else such as the viridis color scheme, as this is a very popular one used. We would use the function scale_colour_viridis() from the viridis package as well as the hexbin package.
+
+install.packages('viridis')
+install.packages('hexbin')
+
+library(viridis)
+library(hexbin)
+
+df = tibble(x = rnorm(10000), y = rnorm(10000))
+
+ggplot(df, aes(x,y)) + geom_hex() + coord_fixed()
+
+ggplot(df, aes(x,y)) + geom_hex() + viridis::scale_fill_viridis() + coord_fixed()
+#Same plot but with viridis colors.
+```
+```{r}
+#3.7 Themes
+#We can also customize the theme of our plots as well, to do this we'll use the theme function. Themes allows us to change some or all of the non-data elements of our plots.
+
+#ggplot has 8 themes by default but there are tons more available online in other packages like ggthemes.
+
+ggplot(mpg, aes(displ, hwy)) + geom_point(aes(color = class)) + geom_smooth(se = FALSE) + theme_light()
+#Light theme
+
+ggplot(mpg, aes(displ, hwy)) + geom_point(aes(color = class)) + geom_smooth(se = FALSE) + theme_dark()
+#Dark theme
+
+#We can also even create our own themes! We can do this by setting some or all of the arguments to the theme function ourselves.
+
+#This is an example of a theme that Nick created.
+
+ theme (panel.border = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        legend.position="bottom",
+        legend.title=element_blank(),
+        legend.text=element_text(size=8),
+        panel.grid.major = element_blank(),
+        legend.key = element_blank(),
+        legend.background = element_blank(),
+        axis.text.y=element_text(colour="black"),
+        axis.text.x=element_text(colour="black"),
+        text=element_text(family="Arial"))
+```
+
+```{r}
+#3.8 Saving and exporting your plots.
+#We can make a single file sing ggsave(), this saves the most recent plot to your working directory.
+
+ggplot(mpg, aes(displ, hwy)) +geom_point()
+
+ggsave("Workshop2-saved-plot.pdf")
+
+#We can also change the dimensions of our plot using the width and height arguments in the function too.
+
+getwd()
+
+```
+
