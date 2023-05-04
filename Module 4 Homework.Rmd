@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r}
-fast_food = read.csv("~/Fast Food Sales 2002.csv")
+fast_food = read.csv("~/Desktop/github/mb5370/data/Fast Food Sales 2002.csv")
 
 library("tidyverse")
 
@@ -19,9 +19,7 @@ ffplot = ggplot(data = plot1)+ geom_bar(aes(x = chains, y = money, fill = chains
 
 ffplot + theme(legend.position = "none")
 
-view(ffplot)
-
-ggsave("Fast-Food-Homework.pdf")
+ggsave("Fast-Food-Homework.jpg")
 
 ```
 
