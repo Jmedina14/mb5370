@@ -5,3 +5,4 @@ date: "2023-05-04"
 output: html_document
 ---
 
+Made out changes and then ticked them all of in the git tab to commit them. Once committed we pushed our changes from my local machine repository to the repository on github.
