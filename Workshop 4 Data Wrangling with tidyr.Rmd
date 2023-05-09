@@ -1,0 +1,425 @@
+---
+title: "Workshop 4 mb5370"
+author: "Jeremy Medina"
+date: "2023-05-09"
+output: html_document
+---
+
+Workshop 4: Data wrangling
+
+Today we'll be focusing on data wrangling, specifically through the use of tidyr and tibbles!
+Tibbles are basically dataframes that are slightly adjusted to keep up with recent advances in R. They help with handling the issues of aging programming without messing up your code (tibbles are sort of future proof dataframes).
+
+
+```{r}
+#5.3 What is a tibble?
+library("tidyverse")
+
+vignette("tibble")
+
+#Vignettes come with every package and provide very useful information thats much easier to understand than the help documentation that comes with packages.
+
+#Tibble is part of tidyverse.
+```
+
+```{r}
+#We can convert regular dataframes into tibbles using as_tibble().
+
+#We can also build tibbles from scratch even without loading in data from an excel csv, so we can type our data/dataset directly into r.
+
+#Another use for tibbles is that they let you refer to variables that you just created. E.g., we can call x when we define z even if we've only given a value for x within the tibble. This can be really useful and efficient when building new column values.
+
+#If you tried to do this just using data.frame, r wouldn't let you and you would have to complete extra steps to get it to work.
+
+#Tibbles even let you use non-syntax names for dataframes, so you can use spaces and other special characters (still better to use underscores though).
+#If using non-syntax characters we'll need to use back ticks ' to help r and some packages understand. e.g., ':)'
+
+#Focusing on tribbles here:
+
+#There are also tribbles, these are transposed tibbles, and they pretty much have one purpose: to help you do data entry directly in your script.
+
+#Column headings are defined by formulas, starting with ~ and each data entry is put in a column that is separated by commas.
+  #This lets you put lay out small amounts of data in easy to read form.
+  #Use hashtags to create comments that clearly id your header.
+
+#What are some differences between tibbles and dataframes? One is in the printing difference between the two. Tibbles only print the first 10 rows and all columns that can fit on your screen, which lets you work with large data more easily.
+
+#Tibble also prints the type of each column variable next to its name, so it'll tell us if a column is numerical, characters, strings, etc.
+
+#Tibble lets us help the console so its less overwhelmed and doesn't have to print massive dataframes, its a way better thing to do than using view().
+
+#Because tibble only gives you the first ten rows, we can use print() and designate the number of rows and display width (width = Inf displays every column).
+
+#TIPS FROM NICK:
+#You’ve a range of other things you can do to interrogate your data. Here are a few options you can set globally. 
+#: if more than n rows, print only m rows. 
+#Use options(tibble.print_min = Inf) to always show all rows.
+#Use options(tibble.width = Inf) to always print all columns, regardless of the width of the screen.
+#Use R’s built-in viewer with View()
+#You can see a complete list of options by looking at the package help with package?tibble.
+#You set global options for your R session like this:
+options(tibble.width = Inf)
+
+#Just like dataframes, we can use a $ symbol to pull out a full column of data (by name) or a double bracket [] to pull out an exact row of data (by row position).
+  #We can also pull out exact cell values using [[]].
+
+#Ex. 
+
+df = tibble(x = runif(5), y = rnorm(5))
+
+#Extract by name
+df$x
+
+df[["x"]]
+
+#Extract by row position.
+df[[1]]
+
+#Extract by exact position
+df[[2,2]]
+
+#We would want to use these tibble features to pull out a single value for use in plotting on a graph, adding a label to a plot, or letting yourself see a key result from your dataset.
+
+#Eventually we'll learn to use pipes %>%, a new way that lets us do things to variables in R. the thing is, for now, to use these base R functions, we'll need to use a . as a placeholder when using pipes to use these functions.
+
+df %>% .$x
+
+df %>% . [["x"]]
+
+df = tibble(xxx = runif(5), y = rnorm(5))
+
+df$xxx
+
+```
+```{r}
+#Tibbles do have some potential downsides, such as being unable to work with older functions in R. If this happens, use as.data.frame() to turn a tibble back into a standard R dataframe.
+```
+
+```{r}
+#Having a go at figuring out what tibbles are doing and whats going on:
+
+df = data.frame(abc = 1, xyz = "a")
+df
+df$x
+df[,"xyz"]
+
+as_tibble(df)
+```
+```{r}
+#5.4 How can I import data? We'll use readr.
+#read_csv() reads comma delimited files, read_csv2() reads semicolon separated files (common in countries where , is used as the decimal place), read_tsv() reads tab delimited files, and read_delim() reads in files with any delimiter.
+
+#read_fwf() reads fixed width files. You can specify fields either by their widths with fwf_widths() or their position with fwf_positions(). The function read_table() reads a common variation of fixed width files where columns are separated by white space.
+
+#csv files are one of the most common forms of data storage, understanding read_csv() will let us apply our knowledge to all the other functions of readr.
+```
+
+```{r}
+#When it comes to read_csv(), the most important argument is the file path of the csv file!
+  #When it runs, it will print out a column specification that gives the name and type of each column.
+  #read_csv() uses the first line of data for column names but there might be times where we might not want the very first line of our data to be read as a column. E.g., like if your data format or a row of data in excel will actually be stuff like info on your file itself and not data.
+    #To deal with this, we can use skip = n, n being the number of lines we want to skip over. We can also use comment = "#" to drop all lines starting with a # or whatever other character you used to designate comments.
+
+#E.g., read_csv("# A comment I want to skip x,y,z 1,2,3", comment = "#").
+
+#Another reason we would want to change read_csv() defaults is if your data doesnt have column names. We can use col_names = FALSE to tell read_csv() so that it doesnt treat the first row was heading bt labels them sequentially (from X1 to Xn).
+    #We might not have to deal with this often, but when you get data from the internet or others, we may run into issues like this.
+
+#Another EXAMPLE:
+  #read_csv("1,2,3 \n4,5,6", col_names = FALSE)
+    #\n is a shortcut for adding a new line, its a common 'break' in programming.
+
+#We can even pass chracter vectors to col_names for read_csv() to be used as column names.
+  #Ex. read_csv("1,2,3\n4,5,6, col_names = "x", "y", "z").
+
+#Another thing we can do is set no data values, which is super important because if you let r count empty things as 0, it can really mess up your analyses.
+
+#read_csv("a,b,c/n1,2,.", na = ".")
+```
+
+```{r}
+#5.5 Tidying data using Tidyr.
+
+#5.5.1 Tidy Data
+#To make our data tidy, we use three interrelated rules:
+  #1. Each variable must have its own column.
+  #2. Each observation must have its own row.
+  #3. Each value must have its own cell.
+
+#All three of these rules are interrelated because we cant only satisfy two, so a more simple set of instructions are:
+  #1. Put each dataset into a tibble.
+  #2. Put each variable in a column.
+
+#Having a consistent data structure makes it easier to learn what we're doing!
+
+#Having variables in columns allows R to work with vectors or values so we can transform to tidy data much smoother.
+
+#UNERSTANDING WHETHER OUR DATA FRAME STRUCTURE IS OPTIMAL OR TIDY IS EXTREMELY IMPORTANT FOR US!
+```
+
+```{r}
+#Nick's Example:
+# Compute rate per 10,000
+table1 %>% 
+  mutate(rate = cases / population * 10000)
+#> # A tibble: 6 × 5
+#>   country      year  cases population  rate
+#>   <chr>       <int>  <int>      <int> <dbl>
+#> 1 Afghanistan  1999    745   19987071 0.373
+#> 2 Afghanistan  2000   2666   20595360 1.29 
+#> 3 Brazil       1999  37737  172006362 2.19 
+#> 4 Brazil       2000  80488  174504898 5.61 
+#> 5 China        1999 212258 1272915272 1.67 
+#> 6 China        2000 213766 1280428583 1.67
+
+# Compute cases per year
+table1 %>% 
+  count(year, wt = cases)
+#> # A tibble: 2 × 2
+#>    year      n
+#>   <int>  <int>
+#> 1  1999 250740
+#> 2  2000 296920
+
+# Visualise changes over time
+library(ggplot2)
+ggplot(table1, aes(year, cases)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
+```
+
+```{r}
+#5.5.2 Spreading and gathering data tables.
+#The first step in tidying data is to understand what your variables and observations actually mean.
+#The second step is to fix one of two common issues with untidy data:
+  #1. One variable is spread across multiple columns.
+  #2. One observation is scattered across multiple rows.
+  #To do this, well use pivot_longer() and pivot_wider().
+
+#In Nick's example, the untidy data has issues in that the column names 1999 and 2000 are values of the year variable and the values in the 1999 and 2000 columns are values of the cases variable, with each row representing two observations instead of one.
+
+table4a
+#> # A tibble: 3 × 3
+#>   country     `1999` `2000`
+#> * <chr>        <int>  <int>
+#> 1 Afghanistan    745   2666
+#> 2 Brazil       37737  80488
+#> 3 China       212258 213766
+
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+
+#We fixed this by putting all the years into one column under a year column, and the cases of the years in a cases column!. Each row is only one observation per year (1999 and 200 have backticks because they're nonsyntax)!
+
+#pivot_longer() makes datasets longer by increasing the number of rows and decreasing the number of columns.
+
+#Another example, lets use pivot_longer() again to tidy another table.
+
+table4b %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "population")
+
+#To combine our new tidied versions of table4a and table 4b into a single tibble we can use dplyr::left_join().
+
+tidy4a <- table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+tidy4b <- table4b %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "population")
+left_join(tidy4a, tidy4b)
+
+#What about using pivot_wider?
+  #We will use this when handling observations scattered across multiple rows. It does the opposite of pivot_wider.
+
+table2
+#In table2, an observation is a country in a year with the observation spread across two rows (cases and pops).
+
+#To make this tidy, we only need two parameters:
+  #1. The column to take variables form: type
+  #2. The column to take values form: count
+
+#pivot_wider() will make the table shorter and wider by creating new, separate columns for cases and populations and populating them with their associated values.
+
+table2 %>%
+    pivot_wider(names_from = type, values_from = count)
+
+#Created a cases column and a population column.
+```
+```{r}
+#5.5.3 Separating and uniting data tables.
+
+table3
+#Table 3 has two variables in it, cases and populations! We have to tidy this by separating them into separate columns. We'll use separate() to separate one column into multiples where we designate.
+
+table3 %>%separate(rate, into = c("cases", "population"))
+
+#R knows to split because of the nonnumeric value "/", but we can specify what the separation character is.
+
+table3 %>%separate(rate, into = c("cases", "population"), sep = "/")
+
+#Separate has changed population and cases values to characters instead of numbers, we can fix this.
+
+table3 %>% 
+  separate(rate, into = c("cases", "population"), convert = TRUE)
+
+table3 %>% 
+  separate(year, into = c("century", "year"), sep = 2)
+
+#Sep and number uses integers to separate values, positive values start at 1 on the far-left of strings, negative at -1 on the far right.
+
+```
+```{r}
+#We can also combine multiple columns by using unite().
+
+table5
+
+#Lets combine century and year.
+
+table5 %>% 
+  unite(new, century, year, sep = "")
+#We use sep = "" because we don't want a separator.
+```
+```{r}
+#5.5.4 Handling missing values
+
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+
+#2015 qtr 4 has an NA, 2016 just doesn't have a value.
+  #NA = explicit absence, presence of absent data.
+  #Blank cell = implicit absence, absence of data.
+
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return)
+
+#We made the implicit value explicit by putting years in the columns.
+
+#If the NA's aren't important and shouldnt be included in other representations, we can set values_drop_na = TRUE in pivot_longer() to turn explicit values into implicit.
+
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return) %>% 
+  pivot_longer(
+    cols = c(`2015`, `2016`), 
+    names_to = "year", 
+    values_to = "return", 
+    values_drop_na = TRUE
+  )
+#This makes it so that missing values that are probably not supposed to be missing are now a valid row of data in your data frame.
+
+#In order to show ourselves that missing values are explicit (they're actually missing values) we can also use complete().
+  #This takes a set of columns and finds all unique combinations and ensures the original dataset contains all of those values, including filling in explicit NAs where needed.
+
+stocks
+
+stocks %>% 
+  complete(year, qtr)
+
+#Put in 2 NAs for us!
+
+#The fill() function can be used to fill in missing values that were meant to be carried forward in the data entry process. It can take columns with missing values and carry the last observation forward (replacing them with the most recent non-missing value).
+
+treatment <- tribble(
+  ~ person,           ~ treatment, ~response,
+  "Derrick Whitmore", 1,           7,
+  NA,                 2,           10,
+  NA,                 3,           9,
+  "Katherine Burke",  1,           4
+)
+
+treatment
+
+treatment %>% 
+  fill(person)
+
+```
+
+```{r}
+#5.6 Learning relation data. Going to do this tomorrow!
+```
+
+```{r}
+#5.7 Pipes for more readable workflows
+
+#Nick's definition of pipes: Pipes are a tool that allow us to elegantly code data wrangling steps into a series of sequential actions on a single data frame. When used properly, pipes allow us to implement the same wrangling steps with less code.
+
+#We've used things like 'filter', 'group_by', 'summarize', and 'mutate' for data wrangling, pipes can be used to code all of these things sequentially in a single statement. This lets us have less code to write while also reducing the number of variables we produce so that our code is more sentence like.
+
+#Lets use pipes to tell a kids story about a bunny named foo foo: 
+
+#Little bunny Foo Foo
+	#Went hopping through the forest
+	#Scooping up the field mice
+	#And bopping them on the head
+
+#foo_foo = little_bunny()
+
+#We'll use a function for each key verb in the story so: hop(), scoop(), and bop(). Doing this, there are four ways we could retell the story in our code:
+
+#1. Save each intermediate step as a new object.
+#2. Overwrite the original object many times.
+#3. Compose functions.
+#4. Use the pipe.
+
+#Let's do them sequentially!
+
+#1. Save each step as a new object.
+
+  foo_foo1 = hop(foo_foo, through = forest)
+  foo_foo_2 = scoop(foo_foo_1, up = field_mice)
+  foo_foo_3 = bop(foo_foo_2, on = head)
+#We're using the same name over and over so we have to add numbers to distinguish, this can cause problems for us later or while we're writing additional code!
+  
+#2. Overwrite the original object instead of creating intermediate objects at each step.
+  
+  foo_foo <- hop(foo_foo, through = forest)
+  foo_foo <- scoop(foo_foo, up = field_mice)
+  foo_foo <- bop(foo_foo, on = head)
+#Problems here are that debugging this would be tasking because we'll need to re-run the pipeline from the beginning and foo_foo being changed each time obscures whats changing on each line because we do it so much!
+  
+#3. String the function calls together
+
+  bop(
+  scoop(
+    hop(foo_foo, through = forest),
+    up = field_mice
+  ), 
+  on = head
+)
+
+#Here we have to read this inside-out, from right-to-left, and the arguments are spread far apart. It's hard for us to read!
+  
+#4. USE A PIPE!!!!!
+  
+  foo_foo %>%
+    hop(through = forest) %>%
+    scoop(up = field_mice) %>%
+    bop(on = head)
+  
+#Pipes wont work for two classes of functions:
+  #1. Functions that use the current environment like assign, which creates a new variable with the given name in the current environment. To fix this, you must be explicit about the environment!
+  
+env = environment () "x" %>% assign(100, envir = env) x
+
+  #2. Functions that use lazy evaluation. In R, function arguments are only computed when the function uses them, not prior to calling the function. The pipe computes each element in turn, so you can’t rely on this behaviour.
+#One place that this is a problem is tryCatch(), which lets you capture and handle errors:
+
+#Ex. tryCatch(stop("!"), error = function(e) "An error")
+
+# stop("!") %>% 
+  tryCatch(error = function(e) "An error")
+
+#Nick's examples of times where we would want to use other tools instead of pipes:
+
+#Your pipes are longer than (say) ten steps. In that case, create intermediate objects with meaningful names. That will make debugging easier and it makes it easier to understand your code.
+
+#You have multiple inputs or outputs. If there isn’t one primary object being transformed, but two or more objects being combined together, don’t use the pipe.
+
+#You are starting to think about a directed graph with a complex dependency structure. Pipes are fundamentally linear and expressing complex relationships with them will typically yield confusing code.
+
+
+```
+
+
+
+
