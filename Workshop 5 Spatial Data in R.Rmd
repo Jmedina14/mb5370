@@ -1,0 +1,265 @@
+---
+title: 'Workshop 5: Spatial Data in R'
+author: "Jeremy Medina"
+date: "2023-05-10"
+output: html_document
+---
+
+Workshop 5: Spatial data in R.
+Today we will be using R as a GIS program!
+
+```{r}
+#6.4 Installing the spatial R packages.
+#While R can be used for all of the things we've done in class so far, R can also be used as a geographic information system software!
+
+#To start this, we'll need to install and load some packages.
+
+#install.packages("sf")
+#install.packages("terra")
+#install.packages("tmap")
+
+library("tidyverse")
+library("sf") #Simple features
+library("terra") #Raster
+library("tmap") #Thematic maps: Geographical maps in which spatial data distributions are visualized.
+library("ggplot2")
+```
+
+```{r}
+#6.6 Loading in our collaborators spatial dataset.
+#Today we'll be working with a copepod abundance dataset that might need some tidying and cleaning up! We'll use readr to load it in instead of the usual way because it can help check for data consistency.
+
+
+c_raw_data = read_csv("~/Desktop/github/mb5370/data/data-for-course/copepods_raw.csv")
+
+c_raw_data
+```
+
+
+```{r}
+#6.7 Checking coordinates and exploring variables.
+ggplot(c_raw_data) + 
+  aes(x = longitude, y = latitude, color = richness_raw) +
+  geom_point()
+
+#X and y axis is longitude and latitude! This is sort of a map but we need a much better one, we don't have the usual elements and things needed to make a real map (like projection to bend or warp your data over the earth). Because we're lacking this, the real distances between the points on this map when measured are probably wrong.
+
+#Now we're going to look at richness data (which is our main variable for analysis). This time we're gonna visualize richness in a non-spatial way with latitude on x and richness on y.
+  #Its not uncommon to go back and forth between spatial and non-spatial analyses.
+
+ggplot(c_raw_data, aes(x = latitude, y = richness_raw)) + stat_smooth() + geom_point()
+
+#In our graph, the data seems to get wonky at around -40, it changes from being steady/lines to being varying. Whats wrong? Probably best to consult the collaborator at this point to work it out!
+
+#Lets try different visualizations of other variables just to see how plots would look.
+
+ggplot(c_raw_data, aes(x = longitude, y = richness_raw)) + stat_smooth() + geom_point()
+
+ggplot(c_raw_data, aes(x = region, y = richness_raw)) + stat_smooth() + geom_point()
+
+#Quick look: Higher species richness in southern ocean and east?
+
+```
+
+```{r}
+#6.8 Getting going with maps.
+#We're going to do a map of species richness again but use R to incorporate the important components of GIS such as the ability to reference data to real locations on the planet and bend it around a mostly spherical ball that is the Earth!
+
+#to start, we'll turn our point data into a spatially referenced data frame using the sf package, so we'll turn our data into a simple features collection.
+
+s_c_raw_data = st_as_sf(c_raw_data, coords = c("longitude", "latitude"), crs = 4326)
+
+#st_as_sf converts different data types to simple features.
+#coords gives the names of the columns that relate to the spatial coordinates (x followed by y coordinate)
+#crs stands for coordinate reference system.
+```
+
+```{r}
+#6.9 Coordinate reference systems
+#crs are required for 2D mapping to compensate for the lumpy 3Dness of Earth.
+  #In mapping, the reference point is referred to as datum and the lumpy spherical earth model is an ellipsoid. Together these things make a geographic coordinate refernece system or GCS which tells us where the coordinates of our copepod data are located on Earth.
+
+  #GCS is represented by angular units like long. and lat., usually in decimal degrees. Our coordinated are long-lat so we use a common on size fits all GCS called WGS84 to define the CRS using the EPSG code 4326. An EPSG code is a unique, short-hand code for a specific coordinate reference system.
+
+#In R, its best practice to use an EPSG code or Well-known text (WKT) to define a CRS.
+
+#its easy to find out things such as the name of the crs, corresponding proj4string, and the WKT for EPSG codes.
+
+crs4326 = st_crs(4326)
+crs4326 #Lets us look at the whole crs.
+crs4326$Name #Pulls out the name of the crs, WGS 84.
+
+crs4326$wkt #Lets us see the crs in well-known text format.
+
+#When making 2D maps in WGS84 GCS, we assume that a degree is a linear unit of measure but its really angular! To map our data in 2D more accurately, we need to decide how to 'project' 3 dimensions into 2.
+
+#Projections are defined by a projected coordinate reference system (PCS) and spatial packages in R use the software PROJ to do this.
+
+#To find the most appropriate projected crs for your data try the R package crs suggest.
+
+#install.packages("crs suggest")
+```
+```{r}
+#6.10 Feature collection (points)
+
+s_c_raw_data
+#This table looks like our first one but now it has a geometry column. This geometry column stores the coordinates (one point for each data row).
+
+#because the data is basically a data frame with geometry, so we can use all the operations that work on dataframes on sf simple features collections (this includes data wrangling operations, plotting operations, and model fitting tools)!
+
+#sf also adds geometric operations like st_join which do joins based on the coordinates.
+
+#Simple features hold a lot of data in columns and rows but are spatially aware. Essentially, that includes extra columns regarding each rows position (in coordinates) and metadata about the coordinate reference system, the type of geometry (point) and so on.
+```
+
+```{r}
+#6.11 Cartography, Time to get into mapping!
+
+plot(s_c_raw_data["richness_raw"])
+
+#In this "map" we have only plotted our richness column, if we just use plot(s_c_raw_data) it would plot every variable in the dataframe, using square brackets allows us to select a single variable.
+
+plot(s_c_raw_data)
+```
+
+```{r}
+#6.12 Thematic maps for communication
+#We'll use tmaps for help in data visualization, tmap works like ggplot in that we build and can add on layers. To start, we only have one layer from sdat, we declare the layer with tm_shape() in this case that would be s_c_raw_data, then the plot type with the following command:
+
+tm1 = tm_shape(s_c_raw_data) + tm_dots(col = "richness_raw")
+
+#tm_dots plots dots of the coordinates, another option is tm_polygons, tm_symbols, etc.
+#"richness_raw" is our color scale.
+
+#We can use tmap_save to save our created maps to the working directory.
+
+tmap_save(tm1, filename = "Richness-map.png", width = 600, height = 600)
+
+
+```
+
+```{r}
+#6.13 Mapping spatial polygons as layers.
+#sf can handle many types of spatial data, including shapes like polygons. We'll mess with this by loading in a map of Australia and a map of Australia's continental shelf using tmap to add these layers.
+
+#6.13.1 Loading shapefiles
+#Instead of the data being a csv life before, our polygons as data will be stored as shapefiles.
+
+#while shapefiles do work, current science is moving away from this and starting to use .gpkg format instead.
+#For now we'll use shapefiles and load them in using st_read.
+
+aus = st_read("~/Desktop/github/mb5370/data/data-for-course/spatial-data/Aussie/Aussie.shp")
+
+shelf = st_read("~/Desktop/github/mb5370/data/data-for-course/spatial-data/aus_shelf/aus_shelf.shp")
+
+#check the data!
+aus
+shelf
+
+#6.13.2 Mapping your polygons
+
+tm_shape(shelf) + tm_polygons()
+
+#We made the shape of our map with shelf.
+#time to make a thematic map through layering!
+
+tm_shape(shelf, bbox = s_c_raw_data) + tm_polygons() + tm_shape(aus) + tm_polygons() + tm_shape(s_c_raw_data) + tm_dots()
+
+#Shape of our map with shelf.
+#bbox = s_c_raw_data to expand the extent of the map so it depicts all of our copepod data points.
+#The shape of Australia (aus) is added on top of the shelf.
+#Our copepod data (s_c_raw_data) is added finally in the form of points using tm_dots().
+```
+```{r}
+#6.14 Exploring t_map
+
+
+tmap_style("beaver")
+#Similar to ggplot themes so it lets us styl our maps in a way that we find the best for effectively communicating our findings! It allows you to add your own personal touch to your created maps in R.
+
+tm_shape(shelf, bbox = s_c_raw_data) + tm_polygons() + tm_shape(aus) + tm_polygons() + tm_shape(s_c_raw_data) + tm_dots()
+
+#lets look at the tmap vignette
+
+vignette('tmap-getstarted')
+```
+
+```{r}
+#Vignette map creation training:
+
+data("World")
+
+tm_shape(World) + tm_polygons("HPI")
+#Created a map of the world!
+
+#Worl is a spatial object of class sf, its a data frame with a special column that has geometry for each row, specifically polygons here. To plot it in tmap we need to specify it with tm_shape() and then to add layers we use + just like ggplot. We used tm_polygons.
+
+?'tmap-element' #Helps learn about the various elements of tmaps like lines, symbols, text, etc.
+
+
+#Interactive Maps:
+#each map can be plotted as either a static image or viewed interactively using plot and view modes.
+
+#The mode of the map can be set with tmap_mode, and toggling between the modes can be done with ttm() (switch). this toggles thematic map.
+
+tmap_mode("view")
+
+tm_shape(World) + tm_polygons("HPI")
+#Now we can zoom in and out and move around the map!
+
+#Multiple shapes and layers:
+  #A shape is a spatial object with a class from sf, sp, stars, or raster. Multiple shapes and layers per shape can also be plotted!
+
+
+data(World, metro, rivers, land)
+
+tmap_mode("plot")
+
+tm_shape(land) + tm_raster("elevation", palette = terrain.colors(10)) + tm_shape(World) + tm_borders("white", lwd = .5) + tm_text("iso_a3", size = "AREA") + tm_shape(metro) + tm_symbols(col = "red", size = "pop2020", scale = .5) + tm_legend(show = FALSE)
+
+#Facets:
+
+#Facets can be created in three ways:
+#By assigining multiple variable names to one aesthetic (in our ex, the first argument of tm_polygons)
+
+tmap_mode("view")
+tm_shape(World) + tm_polygons(c("HPI", "economy")) + tm_facets(sync = TRUE, ncol = 2)
+
+#Options and Styles:
+tmap_mode("plot")
+
+tm_shape(World) + tm_polygons("HPI") + tm_layout(bg.color = "skyblue", inner.margins = c(0, .02, .02, .02))
+
+#These options as well as some others can also be set wtihin tmap_options, which works the same as the base r function options. The main advantage here is that these options are set globally, so you dont have to specify them for each map for the duration of your work sesstion.
+
+#We can use palette = in the polygons function to select color plattes like "viridis".
+
+tmap_options(bg.color = "black",legend.text.color = "white")
+
+tm_shape(World) + tm_polygons("HPI", legend.title = "Happy Planet Index")
+
+#A style is a certain configuration of the tmap options.
+
+tmap_style("classic")
+
+tm_shape(World) + tm_polygons("HPI", legend.title = "Happy Planet Index")
+
+tmap_options_diff()
+#Lets you see what options have been changed!
+
+tmap_options_reset()
+#Resets tmap options to the default.
+
+#Exporting maps:
+
+tm = tm_shape(World) + tm_polygons("HPI", legend.title = "Happy Planet Index")
+
+tmap_save(tm, filename = "practice_world_map.png") #Plot mode
+tmap_save(tm, filename = "pracetice_world_map.html") #View mode
+```
+
+```{r}
+tmap_options(bg.color = "skyblue")
+tm_shape(shelf, bbox = s_c_raw_data) + tm_polygons() + tm_shape(aus) + tm_polygons() + tm_shape(s_c_raw_data) + tm_dots(col = "richness_raw", palette = "viridis") + tm_legend(show = FALSE)
+```
+
