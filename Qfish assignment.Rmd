@@ -1,0 +1,51 @@
+---
+title: "Untitled"
+author: "QFish Assignment"
+date: "2023-05-17"
+output: html_document
+---
+
+```{r}
+library("tidyr")
+library("tibble")
+library("tidyverse")
+library("ggplot2")
+shark_data = read.csv("~/Desktop/github/mb5370/data/export (7).csv")
+
+```
+
+```{r}
+newsharkdata <- shark_data[-c(35,34),]
+
+newsharkdata$CalendarYear <- as.numeric(as.character(newsharkdata$CalendarYear))
+str(newsharkdata$CalendarYear)
+
+newsharkdata$Total.Sharks.Caught <- as.numeric(as.character(newsharkdata$Total.Sharks.Caught))
+str(newsharkdata$Total.Sharks.Caught)
+```
+
+
+```{r}
+ggplot(newsharkdata, aes(x = CalendarYear, y = Total.Sharks.Caught)) + geom_line() + labs(title = "Discarded sharks caught by QLD fisheries 1990-2022", x = "Years", y ="Number of sharks discarded")+ theme(plot.title = element_text(hjust = 0.5)) + 
+  annotate(geom = "text", x=2010, y=40000, label="Implementation of new monitoring measures")+
+  geom_vline(xintercept = 2018)
+
+#+ 
+  geom_text()+
+  annotate(
+    "text", label = "Large increase in discarded sharks in the year 2018 in which the Shark-plan 2 and Shark Assessment Report 2018 was published.", x = 2018, y = 40000)
+
+
+
+```
+
+```{r}
+library(dplyr)
+
+twosharkdata <- data.frame(newsharkdata$CalendarYear, newsharkdata$Total.Sharks.Caught)
+problemyears <- slice_max(twosharkdata, order_by = newsharkdata.Total.Sharks.Caught, n = 10)
+view(twosharkdata)
+
+#This lets us see the sharks released by year, I sorted by largest to find out that 2018 was the year that had the highest number of sharks released.
+#When researching this, I found that there was a shark assessment report in 2018 which introduced additional legislation and protections for shark stocks, improved identification of caught sharks, and improvements to catch and effort data collection. Furthermore, it is believed that the Shark-plan 2 of 2018 has contributed to improving the conservation and management of shark stocks in Australian waters.
+```
