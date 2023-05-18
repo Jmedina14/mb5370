@@ -27,14 +27,9 @@ str(newsharkdata$Total.Sharks.Caught)
 
 ```{r}
 ggplot(newsharkdata, aes(x = CalendarYear, y = Total.Sharks.Caught)) + geom_line() + labs(title = "Discarded sharks caught by QLD fisheries 1990-2022", x = "Years", y ="Number of sharks discarded")+ theme(plot.title = element_text(hjust = 0.5)) + 
-  annotate(geom = "text", x=2010, y=40000, label="Implementation of new monitoring measures")+
-  geom_vline(xintercept = 2018)
-
-#+ 
-  geom_text()+
-  annotate(
-    "text", label = "Large increase in discarded sharks in the year 2018 in which the Shark-plan 2 and Shark Assessment Report 2018 was published.", x = 2018, y = 40000)
-
+  annotate(geom = "text", x=2008, y=47630, label="2018 peak may be the result of improved management") + theme(panel.grid.major = element_blank(),
+               panel.grid.minor = element_blank())
+  #geom_vline(xintercept = 2018)
 
 
 ```
